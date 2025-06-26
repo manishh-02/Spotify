@@ -19,11 +19,22 @@ def load_data():
 
 # ------------------ Preprocessing ------------------
 def preprocess(df):
-    features = ['danceability', 'energy', 'loudness', 'speechiness',
-                'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
+    # List of features we want (if available)
+    possible_features = ['danceability', 'energy', 'loudness', 'speechiness',
+                         'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
+    
+    # Filter only features that actually exist in the dataset
+    features = [f for f in possible_features if f in df.columns]
+    
+    if not features:
+        raise ValueError("❌ None of the expected audio features found in the dataset.")
+
+    # Standard scaling
     scaler = StandardScaler()
     df_scaled = scaler.fit_transform(df[features])
+
     return df, df_scaled, features, scaler
+
 
 # ------------------ KMeans Clustering ------------------
 def cluster_songs(scaled_data, n_clusters=10):
