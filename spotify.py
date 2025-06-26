@@ -13,20 +13,17 @@ import zipfile
 import os
 import pandas as pd
 
-# ✅ Unzip only if not already extracted
-if not os.path.exists("data.csv"):
-    with zipfile.ZipFile("data.zip", 'r') as zip_ref:
-        zip_ref.extractall()
 
-# ✅ Now safely read the extracted CSV
-df = pd.read_csv("data.csv")
-
-# ------------------ Load Data ------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv('data.csv')
-    df.drop_duplicates(inplace=True)
-    return df
+    # ✅ Unzip CSV only if not already extracted
+    if not os.path.exists("data.csv"):
+        with zipfile.ZipFile("data.zip", 'r') as zip_ref:
+            zip_ref.extractall()
+
+    # ✅ Load the extracted CSV
+    return pd.read_csv("data.csv")
+
 
 # ------------------ Preprocessing ------------------
 def preprocess(df):
