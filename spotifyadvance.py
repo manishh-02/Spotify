@@ -7,10 +7,12 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# ----------- Load Data -----------
 @st.cache_data
 def load_data():
     return pd.read_csv("data.csv")
 
+# ----------- Preprocess -----------
 def preprocess(df):
     features_all = ['danceability', 'energy', 'loudness', 'speechiness',
                     'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
@@ -20,15 +22,17 @@ def preprocess(df):
     scaled = scaler.fit_transform(df[features])
     return df, scaled, features, scaler
 
+# ----------- Cluster Songs -----------
 def cluster_songs(scaled, n_clusters=10):
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     clusters = kmeans.fit_predict(scaled)
     return clusters, kmeans
 
-
+# ----------- Recommend Songs -----------
 def recommend(df, song_name, features, scaler, n_recommend=5, genre_filter=None):
-    if genre_filter:
-        df = df[df['genre'] == genre_filter]
+    genre_col = 'genre' if 'genre' in df.columns else 'genres' if 'genres' in df.columns else None
+    if genre_filter and genre_col:
+        df = df[df[genre_col] == genre_filter]
 
     song_row = df[df['name'].str.lower() == song_name.lower()]
     if song_row.empty:
@@ -41,7 +45,11 @@ def recommend(df, song_name, features, scaler, n_recommend=5, genre_filter=None)
     scores = sorted(scores, key=lambda x: x[1], reverse=True)[1:n_recommend+1]
     top_indices = [i[0] for i in scores]
 
-    cols = ['name', 'artists', 'genre', 'duration_ms', 'explicit']
+    cols = ['name', 'artists']
+    if genre_col: cols.append(genre_col)
+    if 'duration_ms' in df.columns: cols.append('duration_ms')
+    if 'explicit' in df.columns: cols.append('explicit')
+
     return df.iloc[top_indices][cols]
 
 # ----------- Show Visuals -----------
@@ -62,51 +70,65 @@ def explore_clusters(df, features):
     st.subheader("🌀 Cluster Feature Averages")
     cluster_means = df.groupby("Cluster")[features].mean()
     st.dataframe(cluster_means.style.background_gradient(cmap="Blues"), use_container_width=True)
-
     st.bar_chart(cluster_means)
 
-    st.subheader("🎧 Songs in Cluster")
+    st.subheader("🎧 Songs in Selected Cluster")
     selected_cluster = st.slider("Choose a cluster", 0, df['Cluster'].nunique() - 1, 0)
-    st.dataframe(df[df['Cluster'] == selected_cluster][['name', 'artists', 'genre']].head(30))
+    genre_col = 'genre' if 'genre' in df.columns else 'genres' if 'genres' in df.columns else None
+    cols = ['name', 'artists']
+    if genre_col: cols.append(genre_col)
+    st.dataframe(df[df['Cluster'] == selected_cluster][cols].head(30), use_container_width=True)
 
 # ----------- Main App -----------
 def main():
     st.set_page_config(page_title="Spotify Smart Recommender", page_icon="🎧", layout="wide")
 
+    # --- Header ---
     st.markdown("""
-        <h1 style='text-align: center; color: #1DB954;'>🎧 Smart Spotify Song Recommender</h1>
-        <h4 style='text-align: center; color: gray;'>Discover music by features, genre, and similarity</h4><hr>
+        <h1 style='text-align: center; color: #1DB954;'>🎧 Spotify Music Recommender</h1>
+        <h4 style='text-align: center; color: gray;'>Discover music by similarity, genre & mood</h4>
+        <center><b>👨‍💻 Developer: Manish</b></center>
+        <hr>
     """, unsafe_allow_html=True)
 
+    # --- Sidebar ---
     with st.sidebar:
         st.image("https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg", width=100)
-        st.markdown("### 👨‍💻 Developer: **Manish**")
+        st.markdown("### 👨‍💻 App by: **Manish**")
         st.markdown("---")
-        page = st.radio("📚 Navigate", ["🎵 Recommend Songs", "📊 Visual Analytics", "🌀 Explore Clusters", "📥 Dataset Preview"])
+        page = st.radio("📚 Choose Option", ["🎵 Recommend Songs", "📊 Visual Analytics", "🌀 Explore Clusters", "📥 Dataset Preview"])
 
+    # --- Load & Process ---
     df = load_data()
     df, scaled, features, scaler = preprocess(df)
     df["Cluster"], model = cluster_songs(scaled)
 
+    # ---------------- Pages ----------------
     if page == "🎵 Recommend Songs":
-        st.subheader("🎵 Get Similar Songs")
+        st.subheader("🎵 Find Similar Songs")
 
         col1, col2 = st.columns(2)
         with col1:
-            song = st.text_input("🔍 Enter a song name:")
+            song = st.text_input("🔍 Enter a Song Name:")
         with col2:
-            genre_filter = st.selectbox("🎼 Filter by Genre (Optional)", [""] + sorted(df['genre'].unique().tolist()))
+            genre_col = 'genre' if 'genre' in df.columns else 'genres' if 'genres' in df.columns else None
+            if genre_col:
+                genre_filter = st.selectbox("🎼 Filter by Genre (Optional)", [""] + sorted(df[genre_col].dropna().unique().tolist()))
+            else:
+                st.warning("⚠️ No genre/genres column found.")
+                genre_filter = None
 
-        if st.button("Recommend"):
+        if st.button("🎯 Recommend"):
             result = recommend(df, song, features, scaler, genre_filter=genre_filter if genre_filter else None)
             if result is not None:
-                st.success("Here are your song recommendations 🎶")
+                st.success("🎧 Recommended Songs:")
                 st.dataframe(result, use_container_width=True)
 
+                # Download
                 csv = result.to_csv(index=False).encode('utf-8')
-                st.download_button("⬇️ Download Recommendations", data=csv, file_name="recommendations.csv", mime='text/csv')
+                st.download_button("⬇️ Download CSV", data=csv, file_name="recommended_songs.csv", mime='text/csv')
             else:
-                st.warning("⚠️ Song not found. Check spelling or try without filter.")
+                st.error("❌ Song not found. Check spelling.")
 
     elif page == "📊 Visual Analytics":
         show_visuals(df)
@@ -115,12 +137,19 @@ def main():
         explore_clusters(df, features)
 
     elif page == "📥 Dataset Preview":
+        st.subheader("🔎 Sample of Full Dataset")
         st.dataframe(df.head(50), use_container_width=True)
 
+    # --- Footer ---
     st.markdown("""
         <hr>
-        <center>🎧 Built with ❤️ by <b>Manish</b> | Powered by <i>Streamlit</i></center>
+        <center>
+        Built with ❤️ by <b>Manish</b> using <i>Streamlit</i>
+        </center>
     """, unsafe_allow_html=True)
 
+# ----------- Run App -----------
 if __name__ == "__main__":
     main()
+
+
