@@ -13,16 +13,16 @@ import zipfile
 import os
 import pandas as pd
 
-
 @st.cache_data
 def load_data():
-    # ✅ Unzip CSV only if not already extracted
     if not os.path.exists("data.csv"):
-        with zipfile.ZipFile("data.zip", 'r') as zip_ref:
-            zip_ref.extractall()
-
-    # ✅ Load the extracted CSV
+        if os.path.exists("data.zip"):
+            with zipfile.ZipFile("data.zip", 'r') as zip_ref:
+                zip_ref.extractall()
+        else:
+            raise FileNotFoundError("❌ data.zip not found in project directory.")
     return pd.read_csv("data.csv")
+
 
 
 # ------------------ Preprocessing ------------------
