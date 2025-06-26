@@ -14,12 +14,12 @@ import os
 import pandas as pd
 
 # ✅ Unzip only if not already extracted
-if not os.path.exists("spotify_combined_no_w_genres.csv"):
-    with zipfile.ZipFile("spotify_combined_no_w_genres.zip", 'r') as zip_ref:
+if not os.path.exists("data.csv"):
+    with zipfile.ZipFile("data.zip", 'r') as zip_ref:
         zip_ref.extractall()
 
 # ✅ Now safely read the extracted CSV
-df = pd.read_csv("spotify_combined_no_w_genres.csv")
+df = pd.read_csv("data.csv")
 
 # ------------------ Load Data ------------------
 @st.cache_data
