@@ -7,12 +7,12 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# ----------- Load data -----------
+
 @st.cache_data
 def load_data():
-    return pd.read_csv("data.csv")  # Directly read CSV, no unzip
+    return pd.read_csv("data.csv") 
 
-# ----------- Preprocessing -----------
+
 def preprocess(df):
     features_all = ['danceability', 'energy', 'loudness', 'speechiness',
                     'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
@@ -25,13 +25,13 @@ def preprocess(df):
     df_scaled = scaler.fit_transform(df[features])
     return df, df_scaled, features, scaler
 
-# ----------- Clustering -----------
+
 def cluster_songs(scaled_data, n_clusters=10):
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     clusters = kmeans.fit_predict(scaled_data)
     return clusters, kmeans
 
-# ----------- Recommendation -----------
+
 def recommend(df, song_name, features, scaler, n_recommend=5):
     song_row = df[df['name'].str.lower() == song_name.lower()]
     if song_row.empty:
@@ -53,7 +53,6 @@ def recommend(df, song_name, features, scaler, n_recommend=5):
 
     return df.iloc[recommended_indices][cols]
 
-# ----------- Visualizations -----------
 def show_visuals(df):
     st.subheader("🎼 Genre Distribution")
     genre_col = 'genre' if 'genre' in df.columns else 'genres' if 'genres' in df.columns else None
@@ -69,7 +68,6 @@ def show_visuals(df):
     sns.heatmap(df.corr(numeric_only=True), annot=False, cmap='coolwarm')
     st.pyplot(plt.gcf())
 
-# ----------- Main App -----------
 def main():
     st.title("🎧 Spotify Music Recommender & Cluster Analyzer")
 
