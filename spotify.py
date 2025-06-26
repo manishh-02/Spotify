@@ -9,6 +9,17 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
+import zipfile
+import os
+import pandas as pd
+
+# ✅ Unzip only if not already extracted
+if not os.path.exists("spotify_combined_no_w_genres.csv"):
+    with zipfile.ZipFile("spotify_combined_no_w_genres.zip", 'r') as zip_ref:
+        zip_ref.extractall()
+
+# ✅ Now safely read the extracted CSV
+df = pd.read_csv("spotify_combined_no_w_genres.csv")
 
 # ------------------ Load Data ------------------
 @st.cache_data
