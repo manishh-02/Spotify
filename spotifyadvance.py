@@ -150,7 +150,7 @@ def main():
     st.markdown("""
         <hr>
         <center>
-        Built with ❤️ by <b>Manish</b> | Powered by <i>Streamlit</i>
+        Developer <b>Manish</b> | Powered by <i>Streamlit</i>
         </center>
     """, unsafe_allow_html=True)
 
