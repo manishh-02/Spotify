@@ -1,7 +1,3 @@
-# spotify_recommender.py
-
-import os
-import zipfile
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -11,16 +7,10 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# ----------- Load and unzip data -----------
+# ----------- Load data -----------
 @st.cache_data
 def load_data():
-    if not os.path.exists("data.csv"):
-        if os.path.exists("data.zip"):
-            with zipfile.ZipFile("data.zip", 'r') as zip_ref:
-                zip_ref.extractall()
-        else:
-            raise FileNotFoundError("❌ data.zip not found in project directory.")
-    return pd.read_csv("data.csv")
+    return pd.read_csv("data.csv")  # Directly read CSV, no unzip
 
 # ----------- Preprocessing -----------
 def preprocess(df):
@@ -116,4 +106,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
